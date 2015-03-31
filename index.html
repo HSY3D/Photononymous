@@ -1,0 +1,314 @@
+<html>
+<head>
+	<title>Home</title>
+	<link href="default.css" rel="stylesheet"/>
+	<link rel="icon" type="image/png" href="favicon.png">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+</head>
+<body onload="get_loc(); return false;">
+	<!-- HEADER -->
+	<div class="header-container">
+		<header>
+			<div id='cssmenu'>
+				<ul>
+				   <li class='active'><a href='index.html'><span>Home</span></a></li>
+				   <li><a href = "javascript:void(0)" onclick = "activateCamera();document.getElementById('light-capture').style.display='block';document.getElementById('fade').style.display='block'"><span>Capture</span></a></li>
+				   <li><a href= "javascript:void(0)" onclick = "document.getElementById('light-uploads').style.display='block';document.getElementById('fade-uploads').style.display='block'"><span>Uploads</span></a></li>
+				   <li class='last'><a href='about/about.html'><span>About</span></a></li>
+				</ul>
+			</div>
+		</header>
+	</div>
+	<script src="http://code.jquery.com/jquery-1.8.3.js" type="text/javascript"></script>
+	<script>
+		function readURL(input, target) {
+		        if (input.files && input.files[0]) {
+		            var reader = new FileReader();
+		            var image_target = $(target);
+		            reader.onload = function (e) {
+		                image_target.attr('src', e.target.result).show();
+		            };
+		            reader.readAsDataURL(input.files[0]);
+		         }
+		     }
+		     console.log( "document loaded" );
+
+		    $("#fileToUpload").live("change",function(){
+		        readURL(this, "#preview_image")
+		    });
+	</script>
+	<!-- BANNER -->
+	   
+	<div class="banner-container">
+	<div id="map-canvas"></div>
+	</div>
+	<script src="js/modernizr.geoloc.js"></script>
+	<script src="js/geoPosition.js"></script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAMEZPPtfEQIaBEwAcZr1VR7qwtN7pFkKk"></script>
+	<script src="js/photoMap.js"></script>
+	
+
+	<!-- CONTENT -->
+	<div class="content-container">
+		<div id="content"></div>
+	<script src="http://fb.me/react-0.12.0.js"></script>
+    <script src="http://fb.me/JSXTransformer-0.12.0.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script>
+	<script type="text/jsx">
+  
+
+  var ImgPost = React.createClass({
+    render: function(){
+      return (
+        <div className="imgPost">
+          <img src={this.props.path}/>
+        </div>
+        );
+    }
+  });
+  
+  var VoteBox = React.createClass({
+    render: function(){
+      return(
+        <p className="voteBox">{this.props.upvotes - this.props.downvotes}</p>
+        );
+    }
+  });
+
+
+  var Upvote = React.createClass({
+    getInitialState: function(){
+      return {votes: this.props.votes};
+    },
+    gainVote: function(e){
+	    $('.upvote').toggleClass('on');
+      e.preventDefault();
+      this.setState({votes: this.state.votes + 1});
+      var id = this.props.id;
+     $.post('upvote.php', {id: id});
+    },
+    render: function() {
+      return (
+        <div className="upVote">
+          <form onSubmit={this.gainVote}>
+            <button className="upvote" class="upvote" onclick=""></button>
+          </form>
+        </div>
+        );
+    }
+  }); 
+
+
+  var Downvote = React.createClass({
+    getInitialState: function(){
+      return {votes: this.props.votes};
+    },
+    loseVote: function(e){
+	    $('.downvote').toggleClass('on');
+      e.preventDefault();
+      this.setState({votes: this.state.votes + 1});
+      var id = this.props.id;
+      $.post('downvote.php', {id: id});
+    },
+    render: function() {
+      return (
+        <div className="downVote">
+          <form onSubmit={this.loseVote}>
+            <button className="downvote"></button>
+          </form>
+        </div>
+        );
+    }
+  });
+
+
+  var Flag = React.createClass({
+    render: function(){
+      return(
+        <div className="flag">
+        <form action="flag.php" method="post">
+          <input type="hidden" name="id" value={this.props.id} />
+          <input type="hidden" name="path" value={this.props.path} />
+          <input type="submit" name="submit" value="Report"/>
+        </form>
+        </div>
+        )
+    }
+  });
+
+  var Post = React.createClass({    
+    render: function(){
+        return(
+         <div className="post">
+          <ImgPost path={this.props.path} />
+          <Upvote id={this.props.id} votes={this.props.upvotes}/>
+          <VoteBox upvotes={this.props.upvotes} downvotes={this.props.downvotes}/>
+          <Downvote id={this.props.id} votes={this.props.downvotes}/>
+          <Flag id={this.props.id} path={this.props.path}/>
+        </div>
+        );
+      }
+    });
+
+
+  //  LIL LOVELY BIT THAT PUTS THE WHOLE SHEBANG TOGETHER
+  var PostStream = React.createClass({
+    getInitialState: function(){
+      return {posts: []};
+    },
+
+    loadContent: function(){
+      //get JSON array from PHP script
+      var self = this;
+      $.getJSON("get_uploads.php",
+        function(result){
+        var posts = result.map(function(p){
+          return{
+            id: p.PhotoID,
+            path: p.Path,
+            upvotes: parseInt(p.Upvotes),
+            downvotes: parseInt(p.Downvotes)
+          };
+        });
+        self.setState({posts: posts});
+      });
+    },
+
+    componentDidMount: function(){
+      this.loadContent();
+      setInterval(this.loadContent, this.props.pollInterval);
+    },
+    render: function(){
+      
+        var posts = this.state.posts.map(function(p){
+          return <Post id={p.id} path={p.path} upvotes={p.upvotes} downvotes={p.downvotes} />
+        });
+        
+        if(!posts.length){
+          posts = <p>Loading...</p>;
+        }
+        
+        return(
+          <div className="photostream">{posts}</div>
+          );
+    }
+  });
+
+  React.render(<PostStream pollInterval={750} />, document.getElementById('content'));
+
+    </script>
+    
+	</div>
+
+	<!-- FOOTER -->
+	<div class="footer"><p class="footer-text">Copyright (c) 2014</div>
+
+	<!-- POPUPFADE ** CAPTURE -->
+		
+		<!-- POPUPFADE ** WHITESPACE -->
+	<div id="light-capture" class="white_content">
+		<video id="video" width="400" height="300" autoplay src=""></video>
+		<canvas id="canvas" width="400" height="300"></canvas>
+		<div class="snapphoto">
+			<button id="snap" class="sexyButton">Snap Photo</button>
+		</div>
+		<form action="#" method="post" enctype="multipart/form-data" class="feedback-form-1">
+			<div class="uploadphoto">
+	            <button id="uploadCapture" type="submit" name="submit" class="sexybuttonupload">Upload</button>
+	        </div>
+        </form>
+	</div>
+		<!-- POPUPFADE ** FADEDBLACKSPACE -->
+	<a href = "javascript:void(0)" onclick = "document.getElementById('light-capture').style.display='none';document.getElementById('fade').style.display='none'"><div id="fade" class="black_overlay"></div></a>
+
+
+	<!-- POPUPFADE ** UPLOAD -->
+
+		<!-- POPUPFADE ** WHITESPACE -->
+	<div id="light-uploads" class="white_content_uploads">
+     <form action="upload.php" method="post" enctype="multipart/form-data" class="feedback-form-1">
+        
+            <div class="input-file-row-1">
+	            <div class="uploadphoto">
+	                <div class="upload-file-container">
+	                    <img id="preview_image" src="#" alt="" />
+	                    <div class="upload-file-container-text">
+	                        <div class = 'one_opacity_0'>
+	                            <input type="file" label = "add" name="fileToUpload" id="fileToUpload" />
+	                            <input id="lat" type="hidden" name="lat" value="" />
+	                            <input id="lng" type="hidden" name="lng" value="" />
+	                        </div>
+	                        <span> Add Photo </span>
+	                    </div>
+	                </div>
+	            </div>
+            </div>
+        
+        <div class="uploadphoto">
+            <button type="submit" name="submit" class="sexybuttonupload" onclick="show_loc(); return false;">Upload</button>
+        </div>
+    </form>
+</div>
+		<!-- POPUPFADE ** FADEDBLACKSPACE -->
+	<a href = "javascript:void(0)" onclick = "document.getElementById('light-uploads').style.display='none';document.getElementById('fade-uploads').style.display='none'"><div id="fade-uploads" class="black_overlay"></div></a>
+
+</body>
+<script>
+		function activateCamera () {
+			// Grab elements, create settings, etc.
+			var canvas = document.getElementById("canvas"),
+				context = canvas.getContext("2d"),
+				video = document.getElementById("video"),
+				videoObj = { "video": true },
+				errBack = function(error) {
+					console.log("Video capture error: ", error.code); 
+				};
+
+			// Put video listeners into place
+			if(navigator.getUserMedia) { // Standard
+				navigator.getUserMedia(videoObj, function(stream) {
+					video.src = stream;
+					video.play();
+				}, errBack);
+			} else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
+				navigator.webkitGetUserMedia(videoObj, function(stream){
+					video.src = window.webkitURL.createObjectURL(stream);
+					video.play();
+				}, errBack);
+			} else if(navigator.mozGetUserMedia) { // WebKit-prefixed
+				navigator.mozGetUserMedia(videoObj, function(stream){
+					video.src = window.URL.createObjectURL(stream);
+					video.play();
+				}, errBack);
+			}
+
+			// Trigger photo take
+			document.getElementById("snap").addEventListener("click", function() {
+				context.drawImage(video, 0, 0, 400, 300);
+			});
+			
+			/*
+document.getElementById("uploadCapture").addEventListener("click", function UploadPic() {
+    
+			    // Generate the image data
+			    var Pic = document.getElementById("canvas").toDataURL("image/png");
+			    Pic = Pic.replace(/^data:image\/(png|jpg);base64,/, "")
+				alert(Pic);
+			    // Sending the image data to Server
+			    $.ajax({
+			        type: 'POST',
+			        url: 'uploadCapture.php',
+			        data: '{ "imageData" : "' + Pic + '" }',
+			        contentType: 'application/json; charset=utf-8',
+			        dataType: 'json',
+			        success: function (msg) {
+			            alert("Done, Picture Uploaded.");
+			        }
+			    });
+			});
+*/
+
+		}
+	</script>
+</html>

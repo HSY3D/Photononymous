@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Post</title>
+    <link href="post.css" rel="stylesheet"/>
+    <script src="http://fb.me/react-0.12.0.js"></script>
+    <script src="http://fb.me/JSXTransformer-0.12.0.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/jsx">
+  
+
+  var ImgPost = React.createClass({
+    render: function(){
+      return (
+        <div className="imgPost">
+          <img src={this.props.path}/>
+        </div>
+        );
+    }
+  });
+  
+  var VoteBox = React.createClass({
+    render: function(){
+      return(
+        <p className="voteBox">{this.props.upvotes - this.props.downvotes}</p>
+        );
+    }
+  });
+
+
+  var Upvote = React.createClass({
+    getInitialState: function(){
+      return {votes: this.props.votes};
+    },
+    gainVote: function(e){
+      e.preventDefault();
+      this.setState({votes: this.state.votes + 1});
+      var id = this.props.id;
+     $.post('upvote.php', {id: id});
+    },
+    render: function() {
+      return (
+        <div className="upvote">
+          <form onSubmit={this.gainVote}>
+            <button class="upvote">Upvote</button>
+          </form>
+        </div>
+        );
+    }
+  }); 
+
+
+  var Downvote = React.createClass({
+    getInitialState: function(){
+      return {votes: this.props.votes};
+    },
+    loseVote: function(e){
+      e.preventDefault();
+      this.setState({votes: this.state.votes + 1});
+      var id = this.props.id;
+      $.post('downvote.php', {id: id});
+    },
+    render: function() {
+      return (
+        <div className="downvote">
+          <form onSubmit={this.loseVote}>
+            <button>Downvote</button>
+          </form>
+        </div>
+        );
+    }
+  });
+
+
+  var Flag = React.createClass({
+    render: function(){
+      return(
+        <div className="flag">
+        <form action="flag.php" method="post">
+          <input type="hidden" name="id" value={this.props.id} />
+          <input type="hidden" name="path" value={this.props.path} />
+          <input type="submit" name="submit" value="Report"/>
+        </form>
+        </div>
+        )
+    }
+  });
+
+  var Post = React.createClass({    
+    render: function(){
+        return(
+         <div className="post">
+          <ImgPost path={this.props.path} />
+          <Upvote id={this.props.id} votes={this.props.upvotes}/>
+          <VoteBox upvotes={this.props.upvotes} downvotes={this.props.downvotes}/>
+          <Downvote id={this.props.id} votes={this.props.downvotes}/>
+          <Flag id={this.props.id} path={this.props.path}/>
+        </div>
+        );
+      }
+    });
+
+
+  //  LIL LOVELY BIT THAT PUTS THE WHOLE SHEBANG TOGETHER
+  var PostStream = React.createClass({
+    getInitialState: function(){
+      return {posts: []};
+    },
+
+    loadContent: function(){
+      //get JSON array from PHP script
+      var self = this;
+      $.getJSON("get_uploads.php",
+        function(result){
+        var posts = result.map(function(p){
+          return{
+            id: p.PhotoID,
+            path: p.Path,
+            upvotes: parseInt(p.Upvotes),
+            downvotes: parseInt(p.Downvotes)
+          };
+        });
+        self.setState({posts: posts});
+      });
+    },
+
+    componentDidMount: function(){
+      this.loadContent();
+      setInterval(this.loadContent, this.props.pollInterval);
+    },
+    render: function(){
+      
+        var posts = this.state.posts.map(function(p){
+          return <Post id={p.id} path={p.path} upvotes={p.upvotes} downvotes={p.downvotes} />
+        });
+        
+        if(!posts.length){
+          posts = <p>Loading...</p>;
+        }
+        
+        return(
+          <div className="photostream">{posts}</div>
+          );
+    }
+  });
+
+  React.render(<PostStream pollInterval={750} />, document.getElementById('content'));
+
+    </script>
+  </body>
+</html>

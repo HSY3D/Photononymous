@@ -1,0 +1,155 @@
+<html>
+<head>
+	<title>About</title>
+	<link href="../default.css" rel="stylesheet"/>
+	
+	<link rel="icon" type="image/png" href="../favicon.png">
+</head>
+<body>
+	<!-- HEADER -->
+	<div class="header-container">
+		<header>
+			<div id='cssmenu'>
+				<ul>
+				   <li class='first'><a href='../index.html'><span>Home</span></a></li>
+				   <li><a href = "javascript:void(0)" onclick = "activateCamera();document.getElementById('light-capture').style.display='block';document.getElementById('fade').style.display='block'"><span>Capture</span></a></li>
+				   <li><a href= "javascript:void(0)" onclick = "document.getElementById('light-uploads').style.display='block';document.getElementById('fade-uploads').style.display='block'"><span>Uploads</span></a></li>
+				   <li class='active'><a href='about.html'><span>About</span></a></li>
+				</ul>
+			</div>
+		</header>
+	</div>
+
+	<!-- BANNER -->
+	<div class="about-container">
+		<div class="aboutstuff">
+			<h2 class="names">David Blader</h2>
+			<p class="aboutus">A veteran Swamp Guardian for the past 1729 years and an avid lover of Web Dev, David, was elected Group Leader for this project by the Will of The People (Hannan). He was in charge of writing the React and PHP scripts as well as database creation and management.</p>
+			<div class="circular" id="david"></div>
+		</div>
+		<div class="aboutstuff">
+			<h2 class="names">Hugo Barnaby</h2>
+			<p class="aboutus">A true beta neck-beard, Hugo prefers to remain hidden from the eyes of the public. Thus, his major contributions were to the backend. After spending countless hours in his mother's basement playing with Javascript, PHP, the Google Maps API, and Geolocation, he brought Photononymous' super exciting map feature to life.</p>
+			<div class="circular" id="hugo"></div>
+		</div>
+		<div class="aboutstuff">
+			<h2 class="names">Hannan Syed</h2>
+			<p class="aboutus">Born in the year 1995 after the demise of the Soviet Union Hannan soon rose to prominence in the battle between America and Russia in CSS and HTML. Quickly overtaking the ranks of the top CIA Agents Hannan is now a front-end hit-man who worked on stuff for this site. </p>
+			<div class="circular" id="hannan"></div>
+		</div>
+	</div>
+
+	
+
+	<!-- CONTENT -->
+	<!-- <div class="content-container">
+		<div class="content"></div>
+	</div> -->
+
+	<!-- FOOTER -->
+	<div class="footer-about"><p class="footer-text">Copyright (c) 2014</div>
+
+	<!-- POPUPFADE ** CAPTURE -->
+		
+		<!-- POPUPFADE ** WHITESPACE -->
+	<div id="light-capture" class="white_content">
+		<video id="video" width="400" height="300" autoplay src=""></video>
+		<canvas id="canvas" width="400" height="300"></canvas>
+		<div class="snapphoto">
+			<button id="snap" class="sexyButton">Snap Photo</button>
+		</div>
+		<form action="uploadCapture.php" method="post" enctype="multipart/form-data" class="feedback-form-1">
+			<div class="uploadphoto">
+	            <button id="uploadCapture" type="submit" name="submit" class="sexybuttonupload">Upload</button>
+	        </div>
+        </form>
+	</div>
+		<!-- POPUPFADE ** FADEDBLACKSPACE -->
+	<a href = "javascript:void(0)" onclick = "document.getElementById('light-capture').style.display='none';document.getElementById('fade').style.display='none'"><div id="fade" class="black_overlay"></div></a>
+
+
+	<!-- POPUPFADE ** UPLOAD -->
+
+		<!-- POPUPFADE ** WHITESPACE -->
+	<div id="light-uploads" class="white_content_uploads">
+     <form action="upload.php" method="post" enctype="multipart/form-data" class="feedback-form-1">
+        
+            <div class="input-file-row-1">
+	            <div class="uploadphoto">
+	                <div class="upload-file-container">
+	                    <img id="preview_image" src="#" alt="" />
+	                    <div class="upload-file-container-text">
+	                        <div class = 'one_opacity_0'>
+	                            <input type="file" label = "add" name="fileToUpload" id="fileToUpload" />
+	                        </div>
+	                        <span> Add Photo </span>
+	                    </div>
+	                </div>
+	            </div>
+            </div>
+        
+        <div class="uploadphoto">
+            <button type="submit" name="submit" class="sexybuttonupload">Upload</button>
+        </div>
+    </form>
+</div>
+		<!-- POPUPFADE ** FADEDBLACKSPACE -->
+	<a href = "javascript:void(0)" onclick = "document.getElementById('light-uploads').style.display='none';document.getElementById('fade-uploads').style.display='none'"><div id="fade-uploads" class="black_overlay"></div></a>
+
+</body>
+<script>
+		function activateCamera () {
+			// Grab elements, create settings, etc.
+			var canvas = document.getElementById("canvas"),
+				context = canvas.getContext("2d"),
+				video = document.getElementById("video"),
+				videoObj = { "video": true },
+				errBack = function(error) {
+					console.log("Video capture error: ", error.code); 
+				};
+
+			// Put video listeners into place
+			if(navigator.getUserMedia) { // Standard
+				navigator.getUserMedia(videoObj, function(stream) {
+					video.src = stream;
+					video.play();
+				}, errBack);
+			} else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
+				navigator.webkitGetUserMedia(videoObj, function(stream){
+					video.src = window.webkitURL.createObjectURL(stream);
+					video.play();
+				}, errBack);
+			} else if(navigator.mozGetUserMedia) { // WebKit-prefixed
+				navigator.mozGetUserMedia(videoObj, function(stream){
+					video.src = window.URL.createObjectURL(stream);
+					video.play();
+				}, errBack);
+			}
+
+			// Trigger photo take
+			document.getElementById("snap").addEventListener("click", function() {
+				context.drawImage(video, 0, 0, 400, 300);
+			});
+			
+			document.getElementById("uploadCapture").addEventListener("click", function UploadPic() {
+    
+			    // Generate the image data
+			    var Pic = document.getElementById("canvas").toDataURL("image/png");
+			    Pic = Pic.replace(/^data:image\/(png|jpg);base64,/, "")
+				alert(Pic);
+			    // Sending the image data to Server
+			    $.ajax({
+			        type: 'POST',
+			        url: 'uploadCapture.php',
+			        data: '{ "imageData" : "' + Pic + '" }',
+			        contentType: 'application/json; charset=utf-8',
+			        dataType: 'json',
+			        success: function (msg) {
+			            alert("Done, Picture Uploaded.");
+			        }
+			    });
+			});
+
+		}
+	</script>
+</html>
